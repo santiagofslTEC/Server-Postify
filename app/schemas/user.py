@@ -1,6 +1,7 @@
 from sqlmodel import SQLModel
 from datetime import datetime
-
+from typing import Optional
+import uuid
 
 
 class UserCreate(SQLModel):
@@ -11,7 +12,16 @@ class UserCreate(SQLModel):
     password: str
 
 
+class UserUpdate(SQLModel):
+    username: Optional[str] = None
+    name: Optional[str] = None
+    lastname: Optional[str] = None
+    email: Optional[str] = None
+    password: Optional[str] = None
+
+
 class UserRead(SQLModel):
+    id: uuid.UUID
     username: str
     name: str
     lastname: str
