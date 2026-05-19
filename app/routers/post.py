@@ -10,7 +10,7 @@ from app.db.session import get_session
 from app.schemas.post import PostCreate, PostRead, PostUpdate, PostReadDetails
 from app.schemas.like import LikeRead
 from app.schemas.comment import CommentCreate, CommentRead
-from app.models import Like, Comment, Post 
+from app.models import Like, Comment, Post, Image 
 
 
 
@@ -50,14 +50,21 @@ async def delete_post(id: uuid.UUID, session: AsyncSession = Depends(get_session
     post = result.scalar_one_or_none()
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
+    await session.execute(select(Like).where(Like.post_id == id))
+    for like in (await session.execute(select(Like).where(Like.post_id == id))).scalars().all():
+        await session.delete(like)
+    for comment in (await session.execute(select(Comment).where(Comment.post_id == id))).scalars().all():
+        await session.delete(comment)
+    for image in (await session.execute(select(Image).where(Image.post_id == id))).scalars().all():
+        await session.delete(image)
     await session.delete(post)
     await session.commit()
 
 
 
 
-@router.get("/{post_id}/", response_model=PostReadDetails, status_code=201)
-async def add_comment(post_id: uuid.UUID, session: AsyncSession = Depends(get_session)):
+@router.get("/{post_id}/", response_model=PostReadDetails, status_code=200)
+async def get_post_details(post_id: uuid.UUID, session: AsyncSession = Depends(get_session)):
     result = await session.execute(select(Post).where(Post.id == post_id))
     post = result.scalar_one_or_none()
     

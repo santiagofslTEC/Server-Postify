@@ -9,6 +9,9 @@ from app.db.session import get_session
 from app.models.user import User
 from app.schemas.user import UserCreate, UserRead, UserUpdate
 from app.models.post import Post
+from app.models.comment import Comment
+from app.models.like import Like
+from app.models.image import Image
 from app.schemas.post import PostRead
 
 
@@ -50,6 +53,19 @@ async def delete_user(id: uuid.UUID, session: AsyncSession = Depends(get_session
     user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    for like in (await session.execute(select(Like).where(Like.user_id == id))).scalars().all():
+        await session.delete(like)
+    for comment in (await session.execute(select(Comment).where(Comment.user_id == id))).scalars().all():
+        await session.delete(comment)
+    posts = (await session.execute(select(Post).where(Post.user_id == id))).scalars().all()
+    for post in posts:
+        for like in (await session.execute(select(Like).where(Like.post_id == post.id))).scalars().all():
+            await session.delete(like)
+        for comment in (await session.execute(select(Comment).where(Comment.post_id == post.id))).scalars().all():
+            await session.delete(comment)
+        for image in (await session.execute(select(Image).where(Image.post_id == post.id))).scalars().all():
+            await session.delete(image)
+        await session.delete(post)
     await session.delete(user)
     await session.commit()
 
