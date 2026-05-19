@@ -15,3 +15,6 @@ class User(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
     posts: list["Post"] = Relationship(back_populates="user")
+    comments: list["Comment"] = Relationship(back_populates="user")
+    likes: list["Like"] = Relationship(back_populates="user")
+    
