@@ -8,6 +8,8 @@ from sqlmodel import select
 from app.db.session import get_session
 from app.models.user import User
 from app.schemas.user import UserCreate, UserRead, UserUpdate
+from app.models.post import Post
+from app.schemas.post import PostRead
 
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -50,3 +52,9 @@ async def delete_user(id: uuid.UUID, session: AsyncSession = Depends(get_session
         raise HTTPException(status_code=404, detail="User not found")
     await session.delete(user)
     await session.commit()
+
+
+@router.get('/{UserId}/posts', response_model=List[PostRead], status_code=200)
+async def get_post_by_user(UserId: uuid.UUID, session: AsyncSession = Depends(get_session)):
+    res = await session.execute(select(Post).where(Post.user_id == UserId))
+    return res.scalars().all() 
